@@ -3,7 +3,7 @@
 
 界面如下：
 
-![image-20210316120507317](.\pomodoro.png)
+![image-20210316120507317](https://github.com/xiaoliu66/Pomodoro/blob/master/pomodoro.png)
 
 基本用法：先选择时间（默认为25分钟），然后点击开始进行一个番茄时钟任务。到点了之后会出现提示音提示番茄钟结束。
 
