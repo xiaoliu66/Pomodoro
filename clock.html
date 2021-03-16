@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <link rel="shortcut icon" href="build/icon_256.ico" />
+    <link rel="bookmark" href="build/icon_256.ico" />
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄时钟</title>
+
+    <script src="./node_modules/vue/dist/vue.js"></script>
+
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="./node_modules/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="./node_modules/element-ui/lib/index.js"></script>
+</head>
+<style>
+    #time {
+        font-size: 50px;
+        font-family: 'Lucida Sans';
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    #app {
+        text-align: center;
+    }
+</style>
+
+<body>
+    <div id="app">
+
+        <div id='main'>
+            <div style="margin-top: 20px;margin-bottom: 30px;">
+                <el-radio-group v-model="radio2" size="medium" @change="switchClock()">
+                    <el-radio-button label="25">25分钟</el-radio-button>
+                    <el-radio-button label="30">30分钟</el-radio-button>
+                    <el-radio-button label="40">40分钟</el-radio-button>
+                    <el-radio-button label="50">50分钟</el-radio-button>
+                </el-radio-group>
+            </div>
+        </div>
+        <div id="time">
+            {{time}}
+        </div>
+
+        <div id="btn">
+            <el-button type="primary" plain @click="status()">{{text}}</el-button>
+            <el-button type="primary" plain @click="endClock()">结束</el-button>
+        </div>
+
+    </div>
+</body>
+<script>
+    let app = new Vue({
+        el: '#app',
+        data: {
+            hour: 0,
+            minutes: 25,
+            seconds: 0,
+            defaultMinues: 1,
+            time: '',
+            text: '开始',
+            isBegin: true,
+            remainSeconds: 0,
+            radio2: 25
+        },
+        methods: {
+            // 开始和暂停功能
+            status() {
+                if (this.text === '开始') {
+                    this.text = '暂停';
+                    this.isBegin = true;
+                    let allSeconds = this.getAllSeconds();
+                    if (this.remainSeconds != 0) {
+                        allSeconds = this.remainSeconds;
+                    }
+                    this.startClock(allSeconds);
+                } else if (this.text === '暂停') {
+                    this.text = '开始';
+                    this.isBegin = false;
+                }
+            },
+            // 倒计时
+            startClock(allSeconds) {
+                var clock = window.setInterval(() => {
+                    if (this.isBegin) {
+                        allSeconds--;
+                        this.time = this.getTime(allSeconds);
+                        if (allSeconds < 1) {
+                            this.time = this.start();
+                            window.clearInterval(clock);
+                            this.text = '开始';
+                            this.playNotify();
+                        }
+                    } else {
+                        window.clearInterval(clock);
+                        this.remainSeconds = allSeconds;
+                        // this.$message.success(this.remainSeconds+"");
+                    }
+                }, 1000)
+            },
+            // 初始化
+            start() {
+                let ahour = this.hour;
+                let aminutes = this.minutes;
+                let aseconds = this.seconds;
+
+                if (ahour < 10) {
+                    ahour = '0' + ahour;
+                }
+
+                if (aminutes < 10) {
+                    aminutes = '0' + aminutes;
+                }
+
+                if (aseconds < 10) {
+                    aseconds = '0' + aseconds;
+                }
+
+                return aminutes + ":" + aseconds;
+            },
+            // 结束番茄钟
+            endClock() {
+                // 只有暂停之后才能重置
+                this.isBegin = false;
+                this.time = this.start();
+                this.remainSeconds = 0;
+                this.text = '开始';
+
+            },
+            // 选择时间
+            switchClock() {
+                this.minutes = this.radio2;
+                this.time = this.start();
+            },
+            // 时间结束后播放提示音
+            playNotify() {
+                let audio = new Audio()
+                audio.src = "./sound/1.wav";
+                audio.play();
+            },
+            getAllSeconds() {
+                return this.hour * 3600 + this.minutes * 60 + this.seconds
+            },
+            getHour(seconds) {
+                return Math.floor(seconds / 3600);
+            },
+            getMinutes(seconds) {
+                return Math.floor((seconds - this.getHour(seconds) * 3600) / 60);
+            },
+            getSeconds(seconds) {
+                return Math.floor(seconds - this.getHour(seconds) * 3600 - this.getMinutes(seconds) * 60);
+            },
+            // 给定总秒数返回特定格式的时间字符串 00:00:00
+            getTime(s) {
+                let hour = this.getHour(s);
+                let minutes = this.getMinutes(s);
+                let seconds = this.getSeconds(s);
+
+                let ahour = hour;
+                let aminutes = minutes;
+                let aseconds = seconds;
+
+                if (hour < 10) {
+                    ahour = '0' + ahour;
+                }
+
+                if (minutes < 10) {
+                    aminutes = '0' + aminutes;
+                }
+
+                if (seconds < 10) {
+                    aseconds = '0' + aseconds;
+                }
+
+                // let result = ahour + ":" + aminutes + ":" + aseconds;
+                let result = aminutes + ":" + aseconds;
+
+                return result;
+            }
+        },
+        created() {
+            // 将显示文字重置为初始值
+            this.time = this.start();
+        },
+        mounted() {
+
+        }
+    });
+</script>
+
+</html>

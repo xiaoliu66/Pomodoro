@@ -1,0 +1,46 @@
+{
+  "name": "pomodoro",
+  "version": "1.0.0",
+  "description": "自己制作的番茄钟",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "electron-builder"
+  },
+  "author": "github@xiaoliu66",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^12.0.1",
+    "electron-builder": "^20.28.4"
+  },
+  "build": {
+    "appId": "com.liu.test",
+    "asar": true,
+    "copyright": "版权归轮回所有",
+    "directories": {
+      "buildResources": "images",
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis"
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "dependencies": {
+    "element-ui": "^2.15.1",
+    "vue": "^2.6.12"
+  }
+}
