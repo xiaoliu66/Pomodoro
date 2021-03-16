@@ -24,8 +24,19 @@
         margin-bottom: 20px;
     }
 
+    #text {
+        height: 20px;
+        margin-top: 10px;
+        font-size: 14px;
+        color: cornflowerblue;
+    }
+
     #app {
         text-align: center;
+    }
+
+    #btn {
+        margin-bottom: 10px;
     }
 </style>
 
@@ -33,7 +44,7 @@
     <div id="app">
 
         <div id='main'>
-            <div style="margin-top: 20px;margin-bottom: 30px;">
+            <div style="margin-top: 20px;margin-bottom: 20px;">
                 <el-radio-group v-model="radio2" size="medium" @change="switchClock()">
                     <el-radio-button label="25">25分钟</el-radio-button>
                     <el-radio-button label="30">30分钟</el-radio-button>
@@ -42,12 +53,16 @@
                 </el-radio-group>
             </div>
         </div>
+
         <div id="time">
             {{time}}
+            <div id='text'>
+                {{clockInfo}}
+            </div>
         </div>
 
         <div id="btn">
-            <el-button type="primary" plain @click="status()">{{text}}</el-button>
+            <el-button type="primary" plain @click="status()" v-show='showBtn'>{{text}}</el-button>
             <el-button type="primary" plain @click="endClock()">结束</el-button>
         </div>
 
@@ -65,13 +80,18 @@
             text: '开始',
             isBegin: true,
             remainSeconds: 0,
-            radio2: 25
+            radio2: 25,
+            // 时钟状态信息
+            clockInfo: '',
+            breakTime: 5,
+            showBtn: true // 按钮显示状态
         },
         methods: {
             // 开始和暂停功能
             status() {
                 if (this.text === '开始') {
                     this.text = '暂停';
+                    this.clockInfo = '进行中';
                     this.isBegin = true;
                     let allSeconds = this.getAllSeconds();
                     if (this.remainSeconds != 0) {
@@ -89,16 +109,37 @@
                     if (this.isBegin) {
                         allSeconds--;
                         this.time = this.getTime(allSeconds);
+
+                        // 当预定时间到点时
                         if (allSeconds < 1) {
                             this.time = this.start();
                             window.clearInterval(clock);
                             this.text = '开始';
                             this.playNotify();
+                            this.startBreak(this.getAllSeconds(this.breakTime));
                         }
                     } else {
                         window.clearInterval(clock);
                         this.remainSeconds = allSeconds;
                         // this.$message.success(this.remainSeconds+"");
+                    }
+                }, 1000)
+            },
+            // 休息时间
+            startBreak(s) {
+                this.clockInfo = '休息中';
+                this.showBtn = false;
+                var breakClock = window.setInterval(() => {
+                    s--;
+                    this.time = this.getTime(s);
+
+                    if (s < 1) {
+                        this.time = this.start();
+                        window.clearInterval(breakClock);
+                        this.showBtn = true;
+                        this.clockInfo = '';
+                        // 调用系统的通知窗口
+                        this.notify('番茄时钟','您已经完成一个番茄时钟，请继续加油！');
                     }
                 }, 1000)
             },
@@ -180,6 +221,14 @@
                 let result = aminutes + ":" + aseconds;
 
                 return result;
+            },
+            // 调用系统通知
+            notify(title, body) {
+                var option = {
+                    title: title,
+                    body: body
+                }
+                new window.Notification(option.title, option)
             }
         },
         created() {
