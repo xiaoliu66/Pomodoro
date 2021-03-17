@@ -69,6 +69,13 @@
     </div>
 </body>
 <script>
+    const {
+        dialog
+    } = require('electron').remote
+
+    var clock;
+    var breakClock;
+
     let app = new Vue({
         el: '#app',
         data: {
@@ -78,13 +85,13 @@
             defaultMinues: 1,
             time: '',
             text: '开始',
-            isBegin: true,
-            remainSeconds: 0,
-            radio2: 25,
-            // 时钟状态信息
-            clockInfo: '',
-            breakTime: 5,
-            showBtn: true // 按钮显示状态
+            isBegin: true, // 显示开始、暂停状态
+            remainSeconds: 0, // 剩余时间 用于暂停功能
+            radio2: 25, // 时间的默认值
+            clockInfo: '', // 时钟状态信息
+            breakTime: 5, // minutes
+            showBtn: true, // 按钮显示状态
+            clockStatus: '' // 番茄钟的状态 ‘work' 'break'
         },
         methods: {
             // 开始和暂停功能
@@ -93,7 +100,9 @@
                     this.text = '暂停';
                     this.clockInfo = '进行中';
                     this.isBegin = true;
+                    this.clockStatus = 'work';
                     let allSeconds = this.getAllSeconds();
+                    // this.$message.success("开始时剩余时间：" + this.remainSeconds);
                     if (this.remainSeconds != 0) {
                         allSeconds = this.remainSeconds;
                     }
@@ -105,10 +114,10 @@
             },
             // 倒计时
             startClock(allSeconds) {
-                var clock = window.setInterval(() => {
+                clock = window.setInterval(() => {
                     if (this.isBegin) {
                         allSeconds--;
-                        this.time = this.getTime(allSeconds);
+                        this.time = this.getTime(this.clockStatus, allSeconds);
 
                         // 当预定时间到点时
                         if (allSeconds < 1) {
@@ -116,7 +125,8 @@
                             window.clearInterval(clock);
                             this.text = '开始';
                             this.playNotify();
-                            this.startBreak(this.getAllSeconds(this.breakTime));
+                            // 开始休息时间
+                            this.startBreak(this.breakTime * 60);
                         }
                     } else {
                         window.clearInterval(clock);
@@ -127,11 +137,12 @@
             },
             // 休息时间
             startBreak(s) {
+                this.clockStatus = 'break';
                 this.clockInfo = '休息中';
                 this.showBtn = false;
-                var breakClock = window.setInterval(() => {
+                breakClock = window.setInterval(() => {
                     s--;
-                    this.time = this.getTime(s);
+                    this.time = this.getTime('break', s);
 
                     if (s < 1) {
                         this.time = this.start();
@@ -139,7 +150,8 @@
                         this.showBtn = true;
                         this.clockInfo = '';
                         // 调用系统的通知窗口
-                        this.notify('番茄时钟','您已经完成一个番茄时钟，请继续加油！');
+                        this.notify('番茄时钟', '您已经完成一个番茄时钟，请继续加油！');
+                        this.clockStatus = '';
                     }
                 }, 1000)
             },
@@ -165,11 +177,47 @@
             },
             // 结束番茄钟
             endClock() {
-                // 只有暂停之后才能重置
-                this.isBegin = false;
-                this.time = this.start();
-                this.remainSeconds = 0;
-                this.text = '开始';
+                if (this.clockStatus === 'work') {
+                    dialog.showMessageBox({
+                        type: 'warning',
+                        title: '警告',
+                        message: '现在番茄钟正在运行，确定要结束吗？',
+                        buttons: ['确定', '取消']
+                    }).then(result => {
+                        // this.$message.success(""+result.response)
+                        // 根据buttons中按钮组中的索引值来判断
+                        if (result.response == 0) {
+                            window.clearInterval(clock);
+                            this.time = this.start();
+                            this.remainSeconds = 0;
+                            this.text = '开始';
+                            this.clockInfo = '';
+                        } else {
+
+                        }
+                    })
+                } else if (this.clockStatus === 'break') {
+                    dialog.showMessageBox({
+                        type: 'warning',
+                        title: '警告',
+                        message: '现在是休息时间，确定要结束吗？',
+                        buttons: ['确定', '取消']
+                    }).then(result => {
+                        // this.$message.success(""+result.response)
+                        // 根据buttons中按钮组中的索引值来判断
+                        if (result.response == 0) {
+                            this.time = this.start();
+                            window.clearInterval(breakClock);
+                            this.showBtn = true;
+                            this.clockInfo = '';
+                            // 调用系统的通知窗口
+                            this.notify('番茄时钟', '您已经完成一个番茄时钟，请继续加油！');
+                            this.clockStatus = '';
+                        } else {
+
+                        }
+                    })
+                }
 
             },
             // 选择时间
@@ -196,31 +244,52 @@
                 return Math.floor(seconds - this.getHour(seconds) * 3600 - this.getMinutes(seconds) * 60);
             },
             // 给定总秒数返回特定格式的时间字符串 00:00:00
-            getTime(s) {
-                let hour = this.getHour(s);
-                let minutes = this.getMinutes(s);
-                let seconds = this.getSeconds(s);
+            getTime(status, s) {
+                if (status === 'work') {
+                    let hour = this.getHour(s);
+                    let minutes = this.getMinutes(s);
+                    let seconds = this.getSeconds(s);
 
-                let ahour = hour;
-                let aminutes = minutes;
-                let aseconds = seconds;
+                    let ahour = hour;
+                    let aminutes = minutes;
+                    let aseconds = seconds;
 
-                if (hour < 10) {
-                    ahour = '0' + ahour;
+                    if (hour < 10) {
+                        ahour = '0' + ahour;
+                    }
+
+                    if (minutes < 10) {
+                        aminutes = '0' + aminutes;
+                    }
+
+                    if (seconds < 10) {
+                        aseconds = '0' + aseconds;
+                    }
+
+                    // let result = ahour + ":" + aminutes + ":" + aseconds;
+                    let result = aminutes + ":" + aseconds;
+
+                    return result;
+                } else if (status === 'break') {
+                    let minutes = this.getMinutes(s);
+                    let seconds = this.getSeconds(s);
+
+                    let aminutes = minutes;
+                    let aseconds = seconds;
+
+                    if (minutes < 10) {
+                        aminutes = '0' + aminutes;
+                    }
+
+                    if (seconds < 10) {
+                        aseconds = '0' + aseconds;
+                    }
+
+                    let result = aminutes + ":" + aseconds;
+
+                    return result;
                 }
 
-                if (minutes < 10) {
-                    aminutes = '0' + aminutes;
-                }
-
-                if (seconds < 10) {
-                    aseconds = '0' + aseconds;
-                }
-
-                // let result = ahour + ":" + aminutes + ":" + aseconds;
-                let result = aminutes + ":" + aseconds;
-
-                return result;
             },
             // 调用系统通知
             notify(title, body) {
@@ -234,6 +303,7 @@
         created() {
             // 将显示文字重置为初始值
             this.time = this.start();
+
         },
         mounted() {
 

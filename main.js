@@ -19,7 +19,9 @@ app.on('ready', () => {
         icon: path.join(__dirname, './build/icon.ico'), 
     })
 
+    // mainWindow.webContents.openDevTools()
     mainWindow.loadFile("clock.html")
+    
     require('./menu.js') // 引入菜单代码
     mainWindow.on('closed', () => {
         mainWindow = null;
