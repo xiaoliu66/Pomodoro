@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "electron-builder"
+    "build": "electron-builder --linux"
   },
   "author": "github@xiaoliu66",
   "license": "ISC",
@@ -24,7 +24,10 @@
     "win": {
       "target": [
         {
-          "target": "nsis"
+          "target": "nsis",
+          "arch": [
+            "ia32"
+          ]
         }
       ],
       "icon": "build/icon.ico"
@@ -41,6 +44,7 @@
   },
   "dependencies": {
     "element-ui": "^2.15.1",
+    "sql.js": "^1.5.0",
     "vue": "^2.6.12"
   },
   "repository": {

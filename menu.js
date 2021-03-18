@@ -1,7 +1,7 @@
 const { Menu, BrowserWindow } = require('electron')
 var {shell} = require('electron')
 var template = [{
-    label: '',
+    label: '设置',
     submenu: [{
         label: 'uuu',
         accelerator: 'ctrl+n',
@@ -9,9 +9,11 @@ var template = [{
             var win = new BrowserWindow({
                 width: 500,
                 height: 500,
-                webPreferences: { nodeIntegration: true }
+                webPreferences: { nodeIntegration: true },
+                icon: './build/icon.ico'
             })
-            win.loadFile('yellow.html')
+            // 取消菜单栏 不然会出现子窗口递归
+            win.setMenu(null)
             win.on('closed', () => {
                 win = null
             })

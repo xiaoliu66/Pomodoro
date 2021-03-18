@@ -8,8 +8,8 @@ var mainWindow = null // 主窗口
 
 app.on('ready', () => {
     mainWindow = new browserWindow({
-        width: 420,
-        height: 340,
+        width: 440,
+        height: 400,
         webPreferences: {
             nodeIntegration: true, //设置开启nodejs环境
             contextIsolation: false,

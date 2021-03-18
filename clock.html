@@ -63,8 +63,31 @@
 
         <div id="btn">
             <el-button type="primary" plain @click="status()" v-show='showBtn'>{{text}}</el-button>
+            <el-button type="primary" @click="centerDialogVisible = true">自定义时间</el-button>
             <el-button type="primary" plain @click="endClock()">结束</el-button>
         </div>
+
+        <div id="dialog">
+            <el-dialog title="自定义时间" :visible.sync="centerDialogVisible" width="55%" center>
+                <template>
+                    <el-input-number v-model="hour" size="mini" controls-position="right" @change="handleChange"
+                        :min="0" :max="24"></el-input-number>时
+                    <el-input-number v-model="minutes" size="mini" controls-position="right" @change="handleChange"
+                        :min="0" :max="60">小时</el-input-number>分
+                    <el-input-number v-model="seconds" size="mini" controls-position="right" @change="handleChange"
+                        :min="0" :max="60">小时</el-input-number>秒
+
+                </template>
+
+                <span slot="footer" class="dialog-footer">
+                    <el-button @click="centerDialogVisible = false">取 消</el-button>
+                    <el-button type="primary" @click="custom()">确 定</el-button>
+                </span>
+            </el-dialog>
+        </div>
+
+
+
 
     </div>
 </body>
@@ -79,6 +102,7 @@
     let app = new Vue({
         el: '#app',
         data: {
+            num: 1,
             hour: 0,
             minutes: 25,
             seconds: 0,
@@ -91,9 +115,14 @@
             clockInfo: '', // 时钟状态信息
             breakTime: 5, // minutes
             showBtn: true, // 按钮显示状态
-            clockStatus: '' // 番茄钟的状态 ‘work' 'break'
+            clockStatus: '', // 番茄钟的状态 ‘work' 'break'
+            centerDialogVisible: false
         },
         methods: {
+            custom() {
+                this.centerDialogVisible = false;
+                this.time = this.start();
+            },
             // 开始和暂停功能
             status() {
                 if (this.text === '开始') {
@@ -173,7 +202,12 @@
                     aseconds = '0' + aseconds;
                 }
 
-                return aminutes + ":" + aseconds;
+                if (this.hour != 0) {
+                    return ahour + ":" + aminutes + ":" + aseconds;
+                } else {
+                    return aminutes + ":" + aseconds;
+                }
+
             },
             // 结束番茄钟
             endClock() {
@@ -266,10 +300,11 @@
                         aseconds = '0' + aseconds;
                     }
 
-                    // let result = ahour + ":" + aminutes + ":" + aseconds;
-                    let result = aminutes + ":" + aseconds;
-
-                    return result;
+                    if (hour == 0) {
+                        return aminutes + ":" + aseconds;
+                    } else {
+                        return ahour + ":" + aminutes + ":" + aseconds;
+                    }
                 } else if (status === 'break') {
                     let minutes = this.getMinutes(s);
                     let seconds = this.getSeconds(s);
