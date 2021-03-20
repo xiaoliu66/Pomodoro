@@ -63,7 +63,7 @@
 
         <div id="btn">
             <el-button type="primary" plain @click="status()" v-show='showBtn'>{{text}}</el-button>
-            <el-button type="primary" @click="centerDialogVisible = true">自定义时间</el-button>
+            <el-button type="primary" @click="centerDialogVisible = true" v-show='showBtn'>自定义时间</el-button>
             <el-button type="primary" plain @click="endClock()">结束</el-button>
         </div>
 
@@ -86,9 +86,9 @@
             </el-dialog>
         </div>
 
-
-
-
+        <div id="showFinish">
+            {{finishNum}}
+        </div>
     </div>
 </body>
 <script>
@@ -96,13 +96,25 @@
         dialog
     } = require('electron').remote
 
+    const db = require('./js/db.js');
+    const time = require('./js/timeUtil.js');
+    const sqlite3 = require("sqlite3");
+
     var clock;
     var breakClock;
+    var numText = '';
+
+
+    var fs = require('fs');
+    var initSqlJs = require('./node_modules/sql.js/dist/sql-wasm.js');
+    var filebuffer = fs.readFileSync('pomodoro.db');
+    // db.dataBaseInit();
+
 
     let app = new Vue({
         el: '#app',
         data: {
-            num: 1,
+            finishNum: '',
             hour: 0,
             minutes: 25,
             seconds: 0,
@@ -113,10 +125,13 @@
             remainSeconds: 0, // 剩余时间 用于暂停功能
             radio2: 25, // 时间的默认值
             clockInfo: '', // 时钟状态信息
-            breakTime: 5, // minutes
+            breakTime: 1, // minutes
             showBtn: true, // 按钮显示状态
             clockStatus: '', // 番茄钟的状态 ‘work' 'break'
-            centerDialogVisible: false
+            centerDialogVisible: false,
+            startTime: '', // 番茄钟开始时间
+            endTime: '', // 番茄钟结束时间
+            planTime: '' // 番茄钟预定时间
         },
         methods: {
             custom() {
@@ -126,6 +141,7 @@
             // 开始和暂停功能
             status() {
                 if (this.text === '开始') {
+                    this.startTime = time.timeStamp2String();
                     this.text = '暂停';
                     this.clockInfo = '进行中';
                     this.isBegin = true;
@@ -150,12 +166,19 @@
 
                         // 当预定时间到点时
                         if (allSeconds < 1) {
-                            this.time = this.start();
+                            this.endTime = time.timeStamp2String();
                             window.clearInterval(clock);
                             this.text = '开始';
                             this.playNotify();
+                            // 将番茄钟信息插入到数据库中
+                            let planTime = this.hour + 'h' + this.minutes + 'm' + this.seconds + 's';
+                            this.insertData(time.timeId(), this.startTime, this.endTime, planTime,
+                                'true');
+                            // 刷新番茄钟完成数据
+                            this.getFinishNumber();
                             // 开始休息时间
                             this.startBreak(this.breakTime * 60);
+
                         }
                     } else {
                         window.clearInterval(clock);
@@ -222,12 +245,15 @@
                         // 根据buttons中按钮组中的索引值来判断
                         if (result.response == 0) {
                             window.clearInterval(clock);
+                            this.endTime = time.timeStamp2String();
                             this.time = this.start();
                             this.remainSeconds = 0;
                             this.text = '开始';
                             this.clockInfo = '';
-                        } else {
 
+                            // 在运行中的番茄钟结束，就相当于失败了。把失败的数据插入到数据库中。
+                            let planTime = this.hour + 'h' + this.minutes + 'm' + this.seconds + 's';
+                            this.insertData(time.timeId(), this.startTime, this.endTime, planTime,'false')
                         }
                     })
                 } else if (this.clockStatus === 'break') {
@@ -247,8 +273,6 @@
                             // 调用系统的通知窗口
                             this.notify('番茄时钟', '您已经完成一个番茄时钟，请继续加油！');
                             this.clockStatus = '';
-                        } else {
-
                         }
                     })
                 }
@@ -333,6 +357,63 @@
                     body: body
                 }
                 new window.Notification(option.title, option)
+            },
+            handleChange(value) {
+                // console.log(value);
+            },
+            // 查询当天完成番茄钟的个数
+            async getFinishNumber() {
+                // 同步执行
+                await initSqlJs().then(function (SQL) {
+                    // Load the db
+                    var dbs = new SQL.Database(filebuffer);
+                    // Prepare an sql statement
+                    var stmt = dbs.prepare(
+                        "select count(*) n from pomodoro_list where isFinished='true' and id like '" +
+                        time.getToday() + "%'"
+                    );
+
+                    // Bind values to the parameters and fetch the results of the query
+                    var result = stmt.getAsObject({
+                        n: ''
+                    });
+
+                    let num = result.n;
+                    console.log(num)
+                    if (num > 0) {
+                        numText = '您今天一共完成了' + num + '个番茄钟，请继续加油！';
+                    } else {
+                        numText = '您今天还没有完成的番茄钟，快去创建吧！'
+                    }
+                    dbs.close();
+                })
+
+                this.finishNum = numText;
+                console.log(new Date().getTime() + "-" + this.finishNum);
+            },
+            insertData(id, startTime, endTime, planTime, isFinished) {
+                // 同步执行
+                initSqlJs().then(function (SQL) {
+
+                    var dbs = new SQL.Database(filebuffer);
+                    dbs.run("BEGIN TRANSACTION;")
+                    dbs.run("insert into pomodoro_list(id, startTime, endTime, planTime, isFinished) VALUES(:id, :startTime, :endTime, :planTime, :isFinished)", {
+                        ':id': id,
+                        ':startTime': startTime,
+                        ':endTime': endTime,
+                        ':planTime': planTime,
+                        ':isFinished': isFinished
+                    })
+                    dbs.run("COMMIT TRANSACTION;")
+
+                    // 以下的代码必须要有，否则只是在内存中插入，并没有将数据写入到文件中。
+                    var data = dbs.export();
+                    var buffer = Buffer.from(data, 'binary');
+                    // 被创建数据库名称
+                    var filename = "pomodoro.db";
+                    fs.writeFileSync(filename, buffer);
+                    dbs.close();
+                })
             }
         },
         created() {
@@ -341,9 +422,47 @@
 
         },
         mounted() {
-
+            this.getFinishNumber();
         }
     });
+
+    // 关闭所有窗口
+    window.onbeforeunload = function (e) {
+        // console.log('I do not want to be closed')
+        if (app.clockStatus == 'work') {
+            app.endTime = time.timeStamp2String();
+            // 将番茄钟信息插入到数据库中
+            let planTime = app.hour + 'h' + app.minutes + 'm' + app.seconds + 's';
+            db.insertData(time.timeId(), app.$data.startTime, app.$data.endTime, planTime, 'false');
+
+            e.preventDefault();
+        }
+
+    };
+
+    // 查询
+    // var getFinishNum = function () {
+    //     let databases = new sqlite3.Database("./pomodoro.db", function (err) {
+    //         //插入数据
+    //         let selectSql =
+    //             "select count(*) n from pomodoro_list where isFinished='true' and id like" + "'" + time
+    //             .getToday() + "%'";
+    //         // get功能：运行指定参数的SQL语句，完成过后调用回调函数。如果执行成功，则回调函数中的第一个参数为null,第二个参数为结果集中的第一行数据，反之则回调函数中只有一个参数，只参数为一个错误的对象。
+    //         databases.get(selectSql, function (err, rows) {
+    //             if (err) {
+    //                 console.log("select from pomodoro_list error,", err
+    //                     .message);
+    //             } else {
+    //                 if (rows.n > 0) {
+    //                     app.finishNum = '您今天一共完成了' + rows.n + '个番茄钟，请继续加油！';
+    //                 } else {
+    //                     app.finishNum = '您今天还没有完成的番茄钟，快去创建吧！'
+    //                 }
+
+    //             }
+    //         });
+    //     });
+    // }
 </script>
 
 </html>
