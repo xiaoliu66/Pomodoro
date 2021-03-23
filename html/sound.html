@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>提示音设置</title>
+        <script src="../node_modules/vue/dist/vue.js"></script>
+        <!-- 引入样式 -->
+        <link
+            rel="stylesheet"
+            href="../node_modules/element-ui/lib/theme-chalk/index.css"
+        />
+        <!-- 引入组件库 -->
+        <script src="../node_modules/element-ui/lib/index.js"></script>
+        <style>
+            #app {
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app">
+            <el-radio-group v-model="radio" @change="switchSound()">
+                <el-radio :label="1" border>提示音1</el-radio><br/>
+                <el-radio :label="2" border>提示音2</el-radio><br/>
+                <el-radio :label="3" border>提示音3</el-radio><br/>
+                <el-radio :label="4" border>提示音4</el-radio><br/>
+                <el-radio :label="5" border>微软晓晓</el-radio><br/>
+            </el-radio-group>
+        </div>
+    </body>
+    <script type="module">
+        var fs = require("fs");
+        var path = require("path");
+        let app = new Vue({
+            el: "#app",
+            data: {
+                radio: 1,
+                src: "",
+            },
+            methods: {
+                switchSound() {
+                    this.src = path.join(__dirname, "../sound/") + this.radio + ".wav";
+                    this.playNotify();
+                    let obj = {
+                        id: this.radio,
+                        name: this.radio + ".wav",
+                        path: this.src,
+                    };
+                    fs.writeFile("setting.json", JSON.stringify(obj), (err) => {
+                        if (err) {
+                            return console.log(err);
+                        }
+                        // console.log("File saved successfully!");
+                    });
+                },
+                playNotify() {
+                    let audio = new Audio(this.src);
+                    // audio.src = this.src;
+                    audio.play();
+                },
+            },
+            created() {
+                fs.readFile("setting.json", (err, data) => {
+                    if (err) {
+                        console.error(err);
+                    } else {
+                        this.radio = JSON.parse(data).id;
+                    }
+                });
+            },
+        });
+    </script>
+</html>

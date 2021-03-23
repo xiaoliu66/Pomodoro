@@ -1,6 +1,6 @@
 {
   "name": "pomodoro",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "极简约风格的番茄钟",
   "main": "main.js",
   "scripts": {
@@ -17,7 +17,7 @@
   "build": {
     "appId": "com.liu.test",
     "asar": true,
-    "copyright": "版权归轮回所有",
+    "copyright": "版权归github@xiaoliu66所有",
     "directories": {
       "buildResources": "images",
       "output": "dist"
@@ -45,7 +45,6 @@
   },
   "dependencies": {
     "element-ui": "^2.15.1",
-    "lowdb": "^1.0.0",
     "sqlite3": "^5.0.2",
     "vue": "^2.6.12"
   },

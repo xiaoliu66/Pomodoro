@@ -5,7 +5,7 @@ const path = require('path')
 
 var dataBaseInit = function () {
     //创建数据库
-    var database = new sqlite3.Database(path.join(__dirname,"../pomodoro.db"), function (err) {
+    var database = new sqlite3.Database(path.join(__dirname, "../pomodoro.db"), function (err) {
         if (err) {
             console.log("new database error,", err.message);
         } else {
@@ -23,11 +23,11 @@ var dataBaseInit = function () {
     });
 }
 
-var insertData = function (id, startTime, endTime, planTime, isFinished) {
+var insertData = function (id, startTime, endTime, planTime, useTime, isFinished) {
     var database = new sqlite3.Database("pomodoro.db", function (err) {
         database.run("BEGIN TRANSACTION;");
         //插入数据
-        database.run("insert into pomodoro_list(id, startTime, endTime, planTime, isFinished) VALUES(?,?,?,?,?)", [id, startTime, endTime, planTime, isFinished], function (err) {
+        database.run("insert into pomodoro_list(id, startTime, endTime, planTime,useTime, isFinished) VALUES(?,?,?,?,?,?)", [id, startTime, endTime, planTime, isFinished], function (err) {
             if (err) {
                 console.log("insert data error,", err.message);
             } else {
