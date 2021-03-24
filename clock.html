@@ -162,6 +162,11 @@
                 },
                 // 开始和暂停功能
                 status() {
+                    if(this.getAllSeconds() == 0){
+                        this.$message.error("自定义时间不能为0，请重新设置！")
+                        return;
+                    }
+
                     if (this.text === "开始") {
                         this.startTime = new Date();
                         this.text = "暂停";
@@ -185,7 +190,6 @@
                         if (this.isBegin) {
                             allSeconds--;
                             this.time = this.getTime(this.clockStatus, allSeconds);
-
                             // 当预定时间到点时
                             if (allSeconds < 1) {
                                 this.endTime = new Date();
@@ -516,10 +520,9 @@
                         e.preventDefault();
                     }
                 };*/
-
-        // 获取当天完成的番茄钟数
-        var getNum = function () {
-            return new Promise(function (resolve) {
+        
+        var startInit = function() {
+            return new Promise(function(resolve){
                 //创建表
                 database.run(
                     "create table if not exists pomodoro_list(id text, startTime TEXT, endTime TEXT, planTime TEXT,useTime text,isFinished text)",
@@ -527,10 +530,16 @@
                         if (err) {
                             console.log("create table error,", err.message);
                         } else {
-                            // console.log("create table success：" + new Date().getTime());
+                            resolve(console.log("create table success：" + new Date().getTime()));
                         }
                     }
                 );
+            })
+        }
+
+        // 获取当天完成的番茄钟数
+        var getNum = function () {
+            return new Promise(function (resolve) {
 
                 //插入数据
                 let selectSql =
@@ -593,9 +602,9 @@
         async function start() {
             var num = 0;
             var total = 0;
-
-            num = await getNum(database);
-            total = await getTotal(database);
+            await startInit();
+            num = await getNum();
+            total = await getTotal();
 
             if (num == 0) {
                 app.finishNum = "今天还没开始做番茄钟。";
