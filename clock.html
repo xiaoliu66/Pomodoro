@@ -198,14 +198,6 @@
                                 this.playNotify();
                                 // 将番茄钟信息插入到数据库中
                                 let planTime = this.hour + "h" + this.minutes + "m" + this.seconds + "s";
-                                // this.insertData(
-                                //     time.timeId(),
-                                //     time.timeStamp2String(this.startTime),
-                                //     time.timeStamp2String(this.endTime),
-                                //     planTime,
-                                //     time.getUseTime(this.startTime, this.endTime),
-                                //     "true"
-                                // );
                                 insertData(
                                     time.timeId(),
                                     time.timeStamp2String(this.startTime),
@@ -292,7 +284,7 @@
 
                                     // 在运行中的番茄钟结束，就相当于失败了。把失败的数据插入到数据库中。
                                     let planTime = this.hour + "h" + this.minutes + "m" + this.seconds + "s";
-                                    this.insertData(
+                                    insertData(
                                         time.timeId(),
                                         time.timeStamp2String(this.startTime),
                                         time.timeStamp2String(this.endTime),
@@ -445,47 +437,7 @@
                 },
                 handleChange(value) {
                     // console.log(value);
-                },
-                // 查询当天完成番茄钟的个数
-                // async getFinishNumber() {
-                //     let data = await db
-                //         .read()
-                //         .get("AllList")
-                //         .filter({ isFinished: "true" })
-                //         .value();
-                //     let num = data.length;
-                //     let totalSeconds = 0;
-                //     for (let i = 0; i < data.length; i++) {
-                //         totalSeconds += data[i].useTime;
-                //     }
-                //     let result = this.getFomatTime(totalSeconds);
-
-                //     if (num == 0) {
-                //         this.finishNum = "今天还没开始做番茄钟。";
-                //     } else {
-                //         this.finishNum =
-                //             "今天已经完成" +
-                //             num +
-                //             "个番茄钟，时间总计" +
-                //             result +
-                //             "。请继续加油！";
-                //     }
-                // },
-                // async insertData(id, startTime, endTime, planTime, useTime, isFinished) {
-                //     db.defaults({ AllList: [] }).write();
-                //     await db
-                //         .read()
-                //         .get("AllList")
-                //         .push({
-                //             id: id,
-                //             startTime: startTime,
-                //             endTime: endTime,
-                //             planTime: planTime,
-                //             useTime: useTime,
-                //             isFinished: isFinished,
-                //         })
-                //         .write();
-                // },
+                }
             },
             created() {
                 // 将显示文字重置为初始值
