@@ -107,7 +107,6 @@
     <script type="module">
         const { dialog } = require("electron").remote;
         const path = require("path");
-        const localdb = require("./js/db.js");
         const time = require("./js/timeUtil.js");
 
         var clock;
@@ -123,11 +122,11 @@
         let obj = {
             id: 5,
             name: "5.wav",
-            path: path.join(__dirname, "./sound/") + 5 + ".wav"
+            path: path.join(__dirname, "./sound/") + 5 + ".wav",
         };
         fs.writeFile("setting.json", JSON.stringify(obj), (err) => {
             if (err) {
-                 console.log(err);
+                console.log(err);
             }
             // console.log("File saved successfully!");
         });
@@ -162,8 +161,8 @@
                 },
                 // 开始和暂停功能
                 status() {
-                    if(this.getAllSeconds() == 0){
-                        this.$message.error("自定义时间不能为0，请重新设置！")
+                    if (this.getAllSeconds() == 0) {
+                        this.$message.error("自定义时间不能为0，请重新设置！");
                         return;
                     }
 
@@ -174,14 +173,19 @@
                         this.isBegin = true;
                         this.clockStatus = "work";
                         let allSeconds = this.getAllSeconds();
-                        // this.$message.success("开始时剩余时间：" + this.remainSeconds);
+                        this.startClock(allSeconds);
+                    } else if (this.text === "暂停") {
+                        this.text = "继续";
+                        this.isBegin = false;
+                    } else if (this.text === "继续") {
+                        this.text = "暂停";
+                        this.isBegin = true;
+
+                        let allSeconds = this.getAllSeconds();
                         if (this.remainSeconds != 0) {
                             allSeconds = this.remainSeconds;
                         }
                         this.startClock(allSeconds);
-                    } else if (this.text === "暂停") {
-                        this.text = "开始";
-                        this.isBegin = false;
                     }
                 },
                 // 倒计时
@@ -203,6 +207,7 @@
                                     time.timeStamp2String(this.startTime),
                                     time.timeStamp2String(this.endTime),
                                     planTime,
+                                    this.getAllSeconds(),
                                     time.getUseTime(this.startTime, this.endTime),
                                     "true"
                                 );
@@ -289,6 +294,7 @@
                                         time.timeStamp2String(this.startTime),
                                         time.timeStamp2String(this.endTime),
                                         planTime,
+                                        this.getAllSeconds(),
                                         time.getUseTime(this.startTime, this.endTime),
                                         "false"
                                     );
@@ -437,7 +443,7 @@
                 },
                 handleChange(value) {
                     // console.log(value);
-                }
+                },
             },
             created() {
                 // 将显示文字重置为初始值
@@ -472,12 +478,12 @@
                         e.preventDefault();
                     }
                 };*/
-        
-        var startInit = function() {
-            return new Promise(function(resolve){
+
+        var startInit = function () {
+            return new Promise(function (resolve) {
                 //创建表
                 database.run(
-                    "create table if not exists pomodoro_list(id text, startTime TEXT, endTime TEXT, planTime TEXT,useTime text,isFinished text)",
+                    "create table if not exists pomodoro_list(id text, startTime TEXT, endTime TEXT, planTime TEXT,planTimeSeconds text,useTime text,isFinished text)",
                     function (err) {
                         if (err) {
                             console.log("create table error,", err.message);
@@ -486,13 +492,12 @@
                         }
                     }
                 );
-            })
-        }
+            });
+        };
 
         // 获取当天完成的番茄钟数
         var getNum = function () {
             return new Promise(function (resolve) {
-
                 //插入数据
                 let selectSql =
                     "select count(*) num from pomodoro_list where isFinished='true' and id like '" +
@@ -515,7 +520,7 @@
             return new Promise(function (resolve) {
                 //插入数据
                 let selectSql =
-                    "select sum(useTime) total from pomodoro_list where isFinished='true' and id like '" +
+                    "select sum(planTimeSeconds) total from pomodoro_list where isFinished='true' and id like '" +
                     time.getToday() +
                     "%'";
 
@@ -531,13 +536,13 @@
         };
 
         // 插入数据到数据库
-        var insertDB = function (id, startTime, endTime, planTime, useTime, isFinished) {
+        var insertDB = function (id, startTime, endTime, planTime, planTimeSeconds, useTime, isFinished) {
             return new Promise(function () {
                 database.run("BEGIN TRANSACTION;");
                 //插入数据
                 database.run(
-                    "insert into pomodoro_list(id, startTime, endTime, planTime,useTime, isFinished) VALUES(?,?,?,?,?,?)",
-                    [id, startTime, endTime, planTime, useTime, isFinished],
+                    "insert into pomodoro_list(id, startTime, endTime, planTime,planTimeSeconds,useTime, isFinished) VALUES(?,?,?,?,?,?,?)",
+                    [id, startTime, endTime, planTime, planTimeSeconds, useTime, isFinished],
                     function (err) {
                         if (err) {
                             console.log("insert data error,", err.message);
@@ -566,8 +571,8 @@
             }
         }
 
-        async function insertData(id, startTime, endTime, planTime, useTime, isFinished) {
-            await insertDB(id, startTime, endTime, planTime, useTime, isFinished);
+        async function insertData(id, startTime, endTime, planTime, planTimeSeconds, useTime, isFinished) {
+            await insertDB(id, startTime, endTime, planTime, planTimeSeconds, useTime, isFinished);
         }
 
         window.onload = start;
