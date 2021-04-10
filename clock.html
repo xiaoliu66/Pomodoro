@@ -22,8 +22,8 @@
         }
 
         #text {
-            height: 20px;
-            margin-top: 10px;
+            height: 8px;
+            margin-bottom: 8px;
             font-size: 14px;
             color: cornflowerblue;
         }
@@ -42,7 +42,7 @@
         <div id="app" style="display: none" :style="{display: 'block'}">
             <div id="main">
                 <div style="margin-top: 20px; margin-bottom: 20px">
-                    <el-radio-group v-model="radio2" size="medium" @change="switchClock()">
+                    <el-radio-group v-model="radio2" size="small" @change="switchClock()">
                         <el-radio-button label="25">25分钟</el-radio-button>
                         <el-radio-button label="30">30分钟</el-radio-button>
                         <el-radio-button label="40">40分钟</el-radio-button>
@@ -52,14 +52,17 @@
             </div>
 
             <div id="time">
-                {{time}}
+                <el-progress type="circle" :percentage="percentage" :width="width" :stroke-width="strokeWidth" :format="percentageText">
+                    <!-- {{time}} -->
+                    
+                </el-progress>
                 <div id="text">{{clockInfo}}</div>
             </div>
 
             <div id="btn">
-                <el-button type="primary" plain @click="status()" v-show="showBtn">{{text}}</el-button>
-                <el-button type="primary" @click="centerDialogVisible = true" v-show="showBtn">自定义时间</el-button>
-                <el-button type="primary" plain @click="endClock()">结束</el-button>
+                <el-button type="primary" size="small" plain @click="status()" v-show="showBtn">{{text}}</el-button>
+                <el-button type="primary" size="small" @click="centerDialogVisible = true" v-show="showBtn">自定义时间</el-button>
+                <el-button type="danger" size="small" plain @click="endClock()">结束</el-button>
             </div>
 
             <div id="dialog">
@@ -134,6 +137,9 @@
         let app = new Vue({
             el: "#app",
             data: {
+                width: 170, // 时钟宽度,
+                strokeWidth: 10, //时钟线条宽度
+                percentage: 0,
                 finishNum: "",
                 hour: 0,
                 minutes: 25,
@@ -144,8 +150,7 @@
                 isBegin: true, // 显示开始、暂停状态
                 remainSeconds: 0, // 剩余时间 用于暂停功能
                 radio2: 25, // 时间的默认值
-                clockInfo: "", // 时钟状态信息
-                breakTime: 5, // minutes
+                breakTime: 5, // 休息时间 minutes
                 showBtn: true, // 按钮显示状态
                 clockStatus: "", // 番茄钟的状态 ‘work' 'break'
                 centerDialogVisible: false,
@@ -155,6 +160,9 @@
                 path: path.join(__dirname, "./sound/1.wav"), // 提示音路径
             },
             methods: {
+                percentageText() {
+                    return this.time;
+                },
                 custom() {
                     this.centerDialogVisible = false;
                     this.time = this.start();
@@ -190,9 +198,12 @@
                 },
                 // 倒计时
                 startClock(allSeconds) {
+                    let all = allSeconds;
                     clock = window.setInterval(() => {
                         if (this.isBegin) {
                             allSeconds--;
+                            // 时钟进度条
+                            this.percentage = 100 - Math.floor(allSeconds / all * 100);
                             this.time = this.getTime(this.clockStatus, allSeconds);
                             // 当预定时间到点时
                             if (allSeconds < 1) {
@@ -227,8 +238,11 @@
                     this.clockStatus = "break";
                     this.clockInfo = "休息中";
                     this.showBtn = false;
+                    let all = s;
                     breakClock = window.setInterval(() => {
                         s--;
+                        // 时钟进度条
+                        this.percentage = 100 - Math.floor(s / all * 100);
                         this.time = this.getTime("break", s);
 
                         if (s < 1) {
@@ -239,6 +253,7 @@
                             // 调用系统的通知窗口
                             this.notify("番茄时钟", "您已经完成一个番茄时钟，请继续加油！");
                             this.clockStatus = "";
+                            this.percentage = 0;
                         }
                     }, 1000);
                 },
@@ -286,6 +301,7 @@
                                     this.remainSeconds = 0;
                                     this.text = "开始";
                                     this.clockInfo = "";
+                                    this.percentage = 0;
 
                                     // 在运行中的番茄钟结束，就相当于失败了。把失败的数据插入到数据库中。
                                     let planTime = this.hour + "h" + this.minutes + "m" + this.seconds + "s";
@@ -319,6 +335,7 @@
                                     // 调用系统的通知窗口
                                     this.notify("番茄时钟", "您已经完成一个番茄时钟，请继续加油！");
                                     this.clockStatus = "";
+                                    this.percentage = 0;
                                 }
                             });
                     }

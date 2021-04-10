@@ -1,6 +1,6 @@
 {
   "name": "pomodoro",
-  "version": "1.3.3",
+  "version": "1.4.0",
   "description": "极简约风格的番茄钟",
   "main": "main.js",
   "scripts": {
