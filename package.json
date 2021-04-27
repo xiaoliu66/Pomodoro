@@ -44,6 +44,7 @@
     }
   },
   "dependencies": {
+    "echarts": "^5.0.2",
     "element-ui": "^2.15.1",
     "sqlite3": "^5.0.2",
     "vue": "^2.6.12"
