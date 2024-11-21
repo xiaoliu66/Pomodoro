@@ -32,7 +32,7 @@ npm start
 ```
 
 
-#### 打包时下载electron-builder
+#### 打包时先下载electron-builder，然后再打包程序
 ```shell
 cnpm i electron-builder -D
 ```
