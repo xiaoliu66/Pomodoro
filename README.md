@@ -16,3 +16,29 @@
 - [ ] 显示统计番茄钟数据
 - [ ] 可导入、导出数据
 - [ ] 随机显示励志语句
+
+## 项目运行及打包
+
+依赖node版本 v16.20.2
+
+npm install 运行时会卡住
+推荐用
+```shell
+yarn install
+```
+#### 运行项目
+```shell
+npm start 
+```
+
+
+#### 打包时下载electron-builder
+```shell
+cnpm i electron-builder -D
+```
+
+#### 打包项目
+```shell
+npm run build
+```
+
